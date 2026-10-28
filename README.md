@@ -2,6 +2,9 @@
   <img src="docs/cover.svg" width="100%" alt="小耄：音乐有形，陪伴有声。桌面黑胶仪表盘与 AI 猫猫助手。">
 </p>
 
+<h1 align="center">小耄 · ESP32-S3 桌面黑胶与 AI 猫猫助手</h1>
+<p align="center"><strong>音乐有形，陪伴有声。</strong><br><sub>让音乐、天气和猫猫的回应，留在桌面的一角。</sub></p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/ESP32--S3-16MB%20%2B%208MB-254957?style=flat-square" alt="ESP32-S3 16MB Flash 8MB PSRAM">
   <img src="https://img.shields.io/badge/LVGL-9.2.2-42766f?style=flat-square" alt="LVGL 9.2.2">
