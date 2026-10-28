@@ -1,0 +1,32 @@
+# Local credentials and configuration
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!*.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Font excluded from distribution
+/dashboard/main/font.ttf
+
+# Build products, downloaded libraries and models
+.pio/
+build/
+managed_components/
+__pycache__/
+*.pyc
+.venv/
+.cache/
+*.onnx
+*.log
+.DS_Store
+
+# Archives may contain the excluded font or local data
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2

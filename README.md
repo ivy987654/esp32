@@ -1,15 +1,30 @@
-# 🐱 小耄 · ESP32-S3 桌面黑胶仪表盘 + AI 猫猫助手
+<p align="center">
+  <img src="docs/cover.svg" width="100%" alt="小耄：音乐有形，陪伴有声。桌面黑胶仪表盘与 AI 猫猫助手。">
+</p>
 
-> 一块 4.3 寸触摸屏，常驻桌面：黑胶唱片转着你正在听的网易云，歌词逐行滚动，旁边是时间、天气，
-> 还有一只叫「小耄」的猫猫 AI，喊一声 **「你好耄耋」** 就会醒来陪你聊天。
+<p align="center">
+  <img src="https://img.shields.io/badge/ESP32--S3-16MB%20%2B%208MB-254957?style=flat-square" alt="ESP32-S3 16MB Flash 8MB PSRAM">
+  <img src="https://img.shields.io/badge/LVGL-9.2.2-42766f?style=flat-square" alt="LVGL 9.2.2">
+  <img src="https://img.shields.io/badge/Display-800%C3%97480-43667c?style=flat-square" alt="800×480">
+  <img src="https://img.shields.io/badge/Host-macOS-586477?style=flat-square" alt="macOS">
+</p>
 
-<!-- 在这里放实物照片 / 演示 GIF，例如：
-<p align="center"><img src="docs/preview.gif" width="640"></p>
--->
+<p align="center">一张转动的黑胶，一屏恰好的日常，一只随叫随到的猫。</p>
+<p align="center">
+  <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#硬件">硬件</a> · <a href="#架构与协议">架构与协议</a> · <a href="#项目结构">项目结构</a>
+</p>
 
----
+<br>
 
-## ✨ 功能
+## 桌面上的四个角落
+
+| 黑胶与歌词 | 时间与天气 | 小耄助手 | 轻触交互 |
+| :--- | :--- | :--- | :--- |
+| 旋转唱片、专辑封面、同步歌词 | 电脑校时、实时天气、三天预报 | 语音唤醒、连续对话、情绪波形 | 四张磨砂卡片，轻点展开详情 |
+
+喊一声「你好耄耋」，小耄就开始听你说话。音乐、时间、天气和对话，共享一块 4.3 寸桌面屏幕。
+
+## 功能
 
 ### 🧊 冰块磨砂风卡片仪表盘
 - 800×480 全屏 LVGL 9 界面，深色冰川渐变背景 + 半透明磨砂玻璃卡片
@@ -45,82 +60,15 @@
 
 ---
 
-## 🔧 硬件
+## 快速开始
 
-| 部件 | 型号 |
-| --- | --- |
-| 主控板 | 正点原子 **DNESP32S3**（ESP32-S3，N16R8：16MB Flash + 8MB PSRAM） |
-| 屏幕 | 正点原子 4.3 寸 RGB 屏 **800×480**（ATK-MD0430R），16 位 RGB565 并口 |
-| 触摸 | GT9xxx 电容触摸（I2C） |
-| 连接 | USB 转串口（UART0，IO43/IO44），供电 + 数据一根线 |
-
-### 引脚占用
-
-| 功能 | GPIO |
-| --- | --- |
-| RGB 数据线 | B3-B7: 17 16 15 7 6 · G2-G7: 10 9 46 3 8 18 · R3-R7: 45 48 47 21 14 |
-| RGB 控制 | DE = IO4，PCLK = IO5（无 HSYNC/VSYNC），背光走 XL9555 P13 |
-| I2C（触摸 / XL9555 等） | SDA = IO41，SCL = IO42，触摸 INT = IO40 |
-| 串口（和电脑通信） | IO43 / IO44 |
-| USB | IO19 / IO20 |
-
-**还空着的 IO**（想给小耄加麦克风、喇叭、灯之类的可以用）：IO1、IO2（仅输入）、IO11 / IO12 / IO13、IO38 / IO39。
-板载 ES8388 音频因为引脚和 RGB 屏冲突用不了。详细的扩展建议见 [空闲 IO 规划](https://claude.ai/artifact/GEueeNcgkrHsLVbiNCW287)。
-
----
-
-## 🏗 架构
-
-ESP32 只负责显示和触摸，所有"重活"（音乐信息、歌词、天气、语音识别、大模型）都在 Mac 上的一个 Python 脚本里完成，再通过 USB 串口推送给板子。
-
-```mermaid
-flowchart LR
-    subgraph Mac["💻 Mac · host/dashboard.py"]
-        NP["正在播放<br/>media-control"] --> M
-        NE["网易云 / LRCLIB 歌词"] --> M
-        WT["wttr.in 天气"] --> M
-        MIC["🎤 麦克风"] --> ASR["VAD + 离线 ASR<br/>sherpa-onnx"] --> BOT["唤醒词 / 对话"]
-        BOT <--> LLM["大模型 API"]
-        BOT --> TTS["🔊 say 朗读"]
-        M["串口打包"]
-        BOT --> M
-    end
-    M -- "USB 串口 115200<br/>文本帧 + 长度校验" --> ESP
-    subgraph ESP["📟 ESP32-S3"]
-        RX["UART 接收任务<br/>(core 1)"] --> ST["状态快照"] --> UI["LVGL 界面<br/>800×480 RGB"]
-        TP["GT9xxx 触摸"] --> UI
-    end
-```
-
-### 串口协议
-
-每帧是一行 UTF-8 文本，字段之间用 Tab 分隔，结尾带 `\t#<payload 字节数>` 做长度校验，长度对不上的帧直接丢弃（防止串口丢字节导致乱码）：
-
-```
-<类型>\t<字段1>\t<字段2>...\t#<前面内容的字节数>\n
-```
-
-| 类型 | 字段 | 说明 |
-| --- | --- | --- |
-| `M` | 歌名 歌手 专辑 播放中(0/1) 进度秒 总时长秒 | 正在播放 |
-| `Y` | 上上句 上一句 当前句 下一句 下下句 | 歌词窗口 |
-| `A` | base64(96×96 RGB565 小端) | 专辑封面 |
-| `C` | Unix 时间戳 时区偏移秒 | 时间同步 |
-| `W` | 温度 天气 城市 体感 湿度 风速 温差 预报1 预报2 预报3 | 天气 |
-| `R` | 状态(idle/listen/think/speak) 用户的话 回复 情绪 | 小耄状态 |
-| `V` | 音量 0-100 | 约 10Hz，驱动波形线 |
-
-脚本每 10 秒会整体重发一次，板子重启后很快就能恢复显示。
-
----
-
-## 🚀 编译烧录
-
-### 环境
+### 01 · 准备环境
 - [PlatformIO](https://platformio.org/)（VS Code 插件或命令行都行），框架为 ESP-IDF，依赖 LVGL 9.2.2（首次编译自动下载）
 - Mac 端：[uv](https://docs.astral.sh/uv/)（自动装好 Python 依赖）、[media-control](https://github.com/ungive/media-control)（`brew install media-control`）
 
-### 烧录固件
+### 02 · 准备字体并烧录
+
+将本机自用的 `font.ttf` 放到 `dashboard/main/font.ttf`，再运行下列命令。字体说明见文末。
 
 ```bash
 cd dashboard
@@ -130,7 +78,7 @@ pio run -t upload      # 编译 + 烧录，波特率 115200
 pio device monitor     # 可选：看串口日志
 ```
 
-### 运行 Mac 端脚本
+### 03 · 启动电脑端
 
 ```bash
 uv run dashboard/host/dashboard.py
@@ -143,9 +91,15 @@ macOS 会请求 **麦克风** 权限，请允许给终端（或 uv）。
 
 ---
 
-## ⚙️ 配置
+## 配置
 
-在家目录创建 `~/.maodie.env`（**不要提交到 Git**），所有项都是可选的：
+从模板创建本机配置，填写大模型接口与个人偏好：
+
+```bash
+cp dashboard/host/maodie.env.example ~/.maodie.env
+```
+
+`~/.maodie.env` 保存在本机；各配置项如下：
 
 ```ini
 # 串口，不填则自动找 /dev/cu.usbserial-*
@@ -173,11 +127,86 @@ MIC_DEVICE=               # 留空用默认麦克风
 
 ---
 
-## 🔁 开机自启（macOS launchd）
+## 硬件
+
+| 部件 | 型号 |
+| --- | --- |
+| 主控板 | 正点原子 **DNESP32S3**（ESP32-S3，N16R8：16MB Flash + 8MB PSRAM） |
+| 屏幕 | 正点原子 4.3 寸 RGB 屏 **800×480**（ATK-MD0430R），16 位 RGB565 并口 |
+| 触摸 | GT9xxx 电容触摸（I2C） |
+| 连接 | USB 转串口（UART0，IO43/IO44），供电 + 数据一根线 |
+
+<details>
+<summary>查看引脚分配</summary>
+
+
+| 功能 | GPIO |
+| --- | --- |
+| RGB 数据线 | B3-B7: 17 16 15 7 6 · G2-G7: 10 9 46 3 8 18 · R3-R7: 45 48 47 21 14 |
+| RGB 控制 | DE = IO4，PCLK = IO5（无 HSYNC/VSYNC），背光走 XL9555 P1.0 |
+| I2C0（XL9555） | SDA = IO41，SCL = IO42 |
+| I2C1（触摸） | SDA = IO39，SCL = IO38，INT = IO40 |
+| 串口（和电脑通信） | IO43 / IO44 |
+| USB | IO19 / IO20 |
+
+</details>
+
+---
+
+## 架构与协议
+
+ESP32 只负责显示和触摸，所有"重活"（音乐信息、歌词、天气、语音识别、大模型）都在 Mac 上的一个 Python 脚本里完成，再通过 USB 串口推送给板子。
+
+```mermaid
+flowchart LR
+    subgraph Mac["💻 Mac · host/dashboard.py"]
+        NP["正在播放<br/>media-control"] --> M
+        NE["网易云 / LRCLIB 歌词"] --> M
+        WT["wttr.in 天气"] --> M
+        MIC["🎤 麦克风"] --> ASR["VAD + 离线 ASR<br/>sherpa-onnx"] --> BOT["唤醒词 / 对话"]
+        BOT <--> LLM["大模型 API"]
+        BOT --> TTS["🔊 say 朗读"]
+        M["串口打包"]
+        BOT --> M
+    end
+    M -- "USB 串口 115200<br/>文本帧 + 长度校验" --> ESP
+    subgraph ESP["📟 ESP32-S3"]
+        RX["UART 接收任务<br/>(core 1)"] --> ST["状态快照"] --> UI["LVGL 界面<br/>800×480 RGB"]
+        TP["GT9xxx 触摸"] --> UI
+    end
+```
+
+<details>
+<summary>查看串口协议</summary>
+
+
+每帧是一行 UTF-8 文本，字段之间用 Tab 分隔，结尾带 `\t#<payload 字节数>` 做长度校验，长度对不上的帧直接丢弃（防止串口丢字节导致乱码）：
+
+```
+<类型>\t<字段1>\t<字段2>...\t#<前面内容的字节数>\n
+```
+
+| 类型 | 字段 | 说明 |
+| --- | --- | --- |
+| `M` | 歌名 歌手 专辑 播放中(0/1) 进度秒 总时长秒 | 正在播放 |
+| `Y` | 上上句 上一句 当前句 下一句 下下句 | 歌词窗口 |
+| `A` | base64(96×96 RGB565 小端) | 专辑封面 |
+| `C` | Unix 时间戳 时区偏移秒 | 时间同步 |
+| `W` | 温度 天气 城市 体感 湿度 风速 温差 预报1 预报2 预报3 | 天气 |
+| `R` | 状态(idle/listen/think/speak) 用户的话 回复 情绪 | 小耄状态 |
+| `V` | 音量 0-100 | 约 10Hz，驱动波形线 |
+
+脚本每 10 秒会整体重发一次，板子重启后很快就能恢复显示。
+
+</details>
+
+---
+
+## 开机自启
 
 `dashboard/host/com.maodie.dashboard.plist` 是一个 LaunchAgent，登录后自动运行脚本、崩溃自动重启，日志写到 `~/Library/Logs/maodie.log`。
 
-1. 打开 plist，把里面的 `/Users/kc/...` 改成你自己的用户名和路径（`uv` 的位置可用 `which uv` 查）
+1. 打开 plist 模板，把里面的 `/Users/YOUR_USERNAME/...` 改成你自己的用户名和路径（`uv` 的位置可用 `which uv` 查）
 2. 安装并启动：
 
 ```bash
@@ -197,35 +226,27 @@ tail -f ~/Library/Logs/maodie.log                                    # 看日志
 
 ---
 
-## 📁 目录结构
+## 项目结构
 
-```
+```text
 esp32/
-├── dashboard/                     # ⭐ 主项目：仪表盘固件 + Mac 端
-│   ├── main/
-│   │   ├── main.c                 # 入口：初始化屏幕、触摸、串口，启动 LVGL 任务
-│   │   ├── board.c / board.h      # RGB 屏时序、GT9xxx 触摸驱动
-│   │   ├── link.c / link.h        # 串口接收、帧校验、协议解析
-│   │   ├── ui.c / ui.h            # 全部界面：磨砂卡片、黑胶、歌词、天气、波形线
-│   │   └── font.ttf               # 内嵌中文字体（子集）
+├── docs/                          # 项目视觉资源
+├── dashboard/
+│   ├── main/                      # 界面、屏幕、触摸、串口
 │   ├── host/
-│   │   ├── dashboard.py           # Mac 端：音乐/歌词/天气/语音助手 → 串口
-│   │   └── com.maodie.dashboard.plist  # launchd 开机自启
-│   ├── tools/
-│   │   ├── mkfont.py              # 从系统字体裁出 GB2312 常用字子集
-│   │   └── otf2ttf.py             # OTF(CFF) 转 TTF，供 TinyTTF 使用
+│   │   ├── dashboard.py           # 音乐、歌词、天气、语音助手
+│   │   ├── maodie.env.example     # 本机配置模板
+│   │   └── com.maodie.dashboard.plist
+│   ├── tools/                     # 字体裁剪与转换
 │   ├── platformio.ini
 │   ├── partitions-16MiB.csv
 │   └── sdkconfig.atk
-└── rgb/                           # 🐱 小实验：屏幕上循环播放耄耋哈气动画
-    ├── main/main.c                # 把 240×240 帧放大 2 倍逐帧刷屏
-    ├── components/BSP/RGBLCD/     # 正点原子 RGB 屏驱动
-    └── tools/mkvideo.py, mkimg.py # 把 GIF 转成 RGB565 帧数据 / 生成背景图
+└── UPLOAD_REVIEW.md               # 源码与第三方资源审查记录
 ```
 
 ---
 
-## 🙏 致谢
+## 致谢
 
 - [xiaozhi-esp32](https://github.com/78/xiaozhi-esp32) —— 唤醒、连续对话、打断的交互设计参考
 - [LVGL](https://lvgl.io/) —— 界面库
@@ -234,6 +255,8 @@ esp32/
 - [wttr.in](https://wttr.in)、[LRCLIB](https://lrclib.net)、网易云音乐 —— 天气与歌词数据
 - 耄耋 —— 精神支柱 🐱
 
-## 📄 License
+## 字体与许可
 
-<!-- 选一个协议，例如 MIT，并在仓库根目录放 LICENSE 文件 -->
+冬青黑体子集保存在本机，编译前放入 `dashboard/main/font.ttf`。仓库中的 `.gitignore` 已排除该文件。
+
+第三方来源、字体处理与授权待核实项见 [源码审查记录](UPLOAD_REVIEW.md)。
