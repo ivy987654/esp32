@@ -10,8 +10,9 @@
 </p>
 
 <p align="center">一张转动的黑胶，一屏恰好的日常，一只随叫随到的猫。</p>
+<p align="center"><sub>由 <a href="https://github.com/ivy987654">ivy987654</a> 制作 · 某不知名小厂的全栈开发</sub></p>
 <p align="center">
-  <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#硬件">硬件</a> · <a href="#架构与协议">架构与协议</a> · <a href="#项目结构">项目结构</a>
+  <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#硬件">硬件</a> · <a href="#架构与协议">架构与协议</a> · <a href="#项目结构">项目结构</a> · <a href="#关于作者">关于作者</a>
 </p>
 
 <br>
@@ -245,6 +246,21 @@ esp32/
 ```
 
 ---
+
+## 关于作者
+
+<table>
+<tr>
+<td width="88" align="center"><img src="https://github.com/ivy987654.png?size=160" width="64" alt="ivy987654 的头像"></td>
+<td>
+<strong>你好，我是 <a href="https://github.com/ivy987654">ivy987654</a>。</strong><br>
+某不知名小厂的全栈开发。<br>
+<sub>把代码写进屏幕，也把一点生活放进代码。</sub>
+</td>
+</tr>
+</table>
+
+<br>
 
 ## 致谢
 
