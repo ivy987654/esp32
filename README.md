@@ -20,6 +20,13 @@
 
 <br>
 
+## 实物展示
+
+<p align="center">
+  <img src="docs/maodie-dashboard.jpg" width="900" alt="小耄实物：ESP32-S3 开发板与 4.3 寸触摸屏，展示黑胶播放器、歌词、时钟、天气和猫猫助手。">
+</p>
+<p align="center"><sub>小耄的桌面时刻 · 4.3 寸屏幕上的音乐与日常</sub></p>
+
 ## 桌面上的四个角落
 
 | 黑胶与歌词 | 时间与天气 | 小耄助手 | 轻触交互 |
