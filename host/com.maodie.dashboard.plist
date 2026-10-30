@@ -5,9 +5,9 @@
   <key>Label</key><string>com.maodie.dashboard</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/YOUR_USERNAME/.local/bin/uv</string>
+    <string>/Users/YOUR_NAME/.local/bin/uv</string>
     <string>run</string>
-    <string>/Users/YOUR_USERNAME/esp32/dashboard/host/dashboard.py</string>
+    <string>/Users/YOUR_NAME/maodie-dashboard/host/dashboard.py</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -17,7 +17,7 @@
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>10</integer>
-  <key>StandardOutPath</key><string>/Users/YOUR_USERNAME/Library/Logs/maodie.log</string>
-  <key>StandardErrorPath</key><string>/Users/YOUR_USERNAME/Library/Logs/maodie.log</string>
+  <key>StandardOutPath</key><string>/Users/YOUR_NAME/Library/Logs/maodie.log</string>
+  <key>StandardErrorPath</key><string>/Users/YOUR_NAME/Library/Logs/maodie.log</string>
 </dict>
 </plist>

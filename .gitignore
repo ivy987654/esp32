@@ -1,32 +1,25 @@
-# Local credentials and configuration
-.env
-.env.*
-*.env
-*.env.*
-!.env.example
-!*.env.example
-*.pem
-*.key
-*.p12
-*.pfx
-
-# Font excluded from distribution
-/dashboard/main/font.ttf
-
-# Build products, downloaded libraries and models
+# 编译产物 / 自动下载的依赖
 .pio/
-build/
 managed_components/
-__pycache__/
-*.pyc
-.venv/
-.cache/
-*.onnx
+build/
 *.log
-.DS_Store
+*.bin
+sdkconfig
+sdkconfig.old
 
-# Archives may contain the excluded font or local data
-*.zip
-*.tar
-*.tar.gz
-*.tar.bz2
+# 字体：自己用 firmware/tools 生成，不随仓库发布
+firmware/font/*.ttf
+firmware/font/*.otf
+firmware/font/*.bin
+
+# 本地配置（含 API key）
+.env
+*.env
+!*.env.example
+
+# Python / 3D 外壳
+.venv/
+__pycache__/
+*.3mf
+
+.DS_Store

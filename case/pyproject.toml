@@ -1,0 +1,10 @@
+[project]
+name = "case"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "manifold3d>=3.5.4",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "trimesh>=5.2.0",
+]

@@ -11,7 +11,18 @@
 static const char *TAG = "board";
 esp_lcd_panel_handle_t g_panel;
 
-/* ---------- RGB LCD ---------- */
+/* ---------- RGB LCD (double frame buffer, swap on vsync = no tearing) ---------- */
+#include "freertos/semphr.h"
+#include "esp_attr.h"
+static SemaphoreHandle_t s_vsync;
+
+static IRAM_ATTR bool on_vsync(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *ed, void *ctx)
+{
+    BaseType_t woken = pdFALSE;
+    xSemaphoreGiveFromISR(s_vsync, &woken);
+    return woken == pdTRUE;
+}
+
 void board_lcd_init(void)
 {
     esp_lcd_rgb_panel_config_t cfg = {
@@ -28,7 +39,7 @@ void board_lcd_init(void)
             45, 48, 47, 21, 14,        /* R3..R7 */
         },
         .timings = {
-            .pclk_hz = 18 * 1000 * 1000,
+            .pclk_hz = 16 * 1000 * 1000,
             .h_res = LCD_W,
             .v_res = LCD_H,
             .hsync_back_porch = 88,
@@ -40,11 +51,22 @@ void board_lcd_init(void)
             .flags.pclk_active_neg = true,
         },
         .flags.fb_in_psram = true,
-        .bounce_buffer_size_px = LCD_W * 10,
+        .bounce_buffer_size_px = LCD_W * 16,
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&cfg, &g_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_reset(g_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(g_panel));
+
+    s_vsync = xSemaphoreCreateBinary();
+    esp_lcd_rgb_panel_event_callbacks_t cbs = {.on_vsync = on_vsync};
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_register_event_callbacks(g_panel, &cbs, NULL));
+}
+
+
+void board_lcd_wait_vsync(void)
+{
+    xSemaphoreTake(s_vsync, 0);
+    xSemaphoreTake(s_vsync, pdMS_TO_TICKS(40));
 }
 
 /* ---------- XL9555 (I2C0) : LCD_BL = P1.0, CT_RST = P1.1 ---------- */
